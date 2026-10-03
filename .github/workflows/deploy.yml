@@ -1,11 +1,9 @@
 name: CI/CD Pipeline
 
-# Скрипт запускается автоматически при каждом пуше или мерже в ветку main
 on:
   push:
     branches: [main]
 
-# Даем права GitHub Actions на публикацию Docker-образов внутри репозитория (GHCR)
 permissions:
   packages: write
   contents: read
@@ -24,14 +22,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm" # Ускоряет сборку за счет кэширования node_modules
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
-        # Чистая установка строго по package-lock.json
 
       - name: Build TypeScript
-        # Передаем заглушки для ВСЕХ OAuth переменных для успешного компиляции Next.js
         env:
           DATABASE_URL: "postgresql://mock_user:mock_password@localhost:5432/mock_db"
           AUTH_SECRET: "temporary_secret_for_building_purposes_only"
@@ -48,14 +44,16 @@ jobs:
   # ==========================================
   deploy:
     runs-on: ubuntu-latest
-    needs: build-and-test # Деплой начнется, только если этап сборки и тестов прошел успешно
-    environment: production # Связываем этот шаг с защитой, которую мы настроили на Шаге 1.3
+    needs: build-and-test
+    environment: production
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Авторизуемся в приватном хранилище Docker-образов GitHub
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -63,15 +61,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Собираем ваш Dockerfile и загружаем образ в облако GitHub
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ghcr.io/spectr1962/test2:latest
+          # Передаем заглушки как аргументы сборки для выполнения next build внутри Docker
+          build-args: |
+            DATABASE_URL=postgresql://mock_user:mock_password@localhost:5432/mock_db
+            AUTH_SECRET=temporary_secret_for_building_purposes_only
+            AUTH_GOOGLE_ID=temporary_google_id
+            AUTH_GOOGLE_SECRET=temporary_google_secret
+            AUTH_YANDEX_ID=temporary_yandex_id
+            AUTH_YANDEX_SECRET=temporary_yandex_secret
+            AUTH_VK_ID=temporary_vk_id
+            AUTH_VK_SECRET=temporary_vk_secret
 
-      # Подключаемся к серверу Рег.ру по SSH и обновляем приложение
       - name: Deploy to Reg.ru VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -79,28 +85,20 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            # Авторизуемся (никнейм пишем маленькими буквами в команде docker login)
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u spectr1962 --password-stdin
-
-            # Скачиваем образ (путь пишем полностью маленькими буквами)
             docker pull ghcr.io/spectr1962/test2:latest
-
-            # Останавливаем старый контейнер, если он был
             docker stop my-ts-app || true
             docker rm my-ts-app || true
-
-            # Запускаем новый контейнер и пробрасываем ваш порт 3001 наружу
-            # Запускаем контейнер и прокидываем в него реальные секреты из GitHub
             docker run -d \
               --name my-ts-app \
               -p 3001:3001 \
-              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-              -e AUTH_SECRET="${{ secrets.AUTH_SECRET }}" \
-              -e AUTH_GOOGLE_ID="${{ secrets.AUTH_GOOGLE_ID }}" \
-              -e AUTH_GOOGLE_SECRET="${{ secrets.AUTH_GOOGLE_SECRET }}" \
-              -e AUTH_YANDEX_ID="${{ secrets.AUTH_YANDEX_ID }}" \
-              -e AUTH_YANDEX_SECRET="${{ secrets.AUTH_YANDEX_SECRET }}" \
-              -e AUTH_VK_ID="${{ secrets.AUTH_VK_ID }}" \
-              -e AUTH_VK_SECRET="${{ secrets.AUTH_VK_SECRET }}" \
+              -e DATABASE_URL="${{ secrets.REAL_DATABASE_URL }}" \
+              -e AUTH_SECRET="${{ secrets.REAL_AUTH_SECRET }}" \
+              -e AUTH_GOOGLE_ID="${{ secrets.REAL_AUTH_GOOGLE_ID }}" \
+              -e AUTH_GOOGLE_SECRET="${{ secrets.REAL_AUTH_GOOGLE_SECRET }}" \
+              -e AUTH_YANDEX_ID="${{ secrets.REAL_AUTH_YANDEX_ID }}" \
+              -e AUTH_YANDEX_SECRET="${{ secrets.REAL_AUTH_YANDEX_SECRET }}" \
+              -e AUTH_VK_ID="${{ secrets.REAL_AUTH_VK_ID }}" \
+              -e AUTH_VK_SECRET="${{ secrets.REAL_AUTH_VK_SECRET }}" \
               --restart unless-stopped \
               ghcr.io/spectr1962/test2:latest
