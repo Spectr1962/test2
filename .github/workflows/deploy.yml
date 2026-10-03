@@ -27,7 +27,8 @@ jobs:
           cache: "npm" # Ускоряет сборку за счет кэширования node_modules
 
       - name: Install dependencies
-        run: npm ci # Чистая установка строго по package-lock.json
+        run: npm ci --legacy-peer-deps
+        # Чистая установка строго по package-lock.json
 
       - name: Build TypeScript
         # Передаем заглушки для ВСЕХ OAuth переменных для успешного компиляции Next.js
