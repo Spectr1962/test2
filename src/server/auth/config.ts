@@ -1,5 +1,5 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { type DefaultSession, type NextAuthConfig } from "next-auth";
+import { type DefaultSession, type NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import YandexProvider from "next-auth/providers/yandex";
 import VKProvider from "next-auth/providers/vk";
@@ -58,4 +58,4 @@ export const authConfig = {
       },
     }),
   },
-} satisfies NextAuthConfig;
+} satisfies NextAuthOptions;
