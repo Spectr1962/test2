@@ -89,8 +89,17 @@ jobs:
             docker rm my-ts-app || true
 
             # Запускаем новый контейнер и пробрасываем ваш порт 3001 наружу
+                        # Запускаем контейнер и прокидываем в него реальные секреты из GitHub
             docker run -d \
               --name my-ts-app \
               -p 3001:3001 \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              -e AUTH_SECRET="${{ secrets.AUTH_SECRET }}" \
+              -e AUTH_GOOGLE_ID="${{ secrets.AUTH_GOOGLE_ID }}" \
+              -e AUTH_GOOGLE_SECRET="${{ secrets.AUTH_GOOGLE_SECRET }}" \
+              -e AUTH_YANDEX_ID="${{ secrets.AUTH_YANDEX_ID }}" \
+              -e AUTH_YANDEX_SECRET="${{ secrets.AUTH_YANDEX_SECRET }}" \
+              -e AUTH_VK_ID="${{ secrets.AUTH_VK_ID }}" \
+              -e AUTH_VK_SECRET="${{ secrets.AUTH_VK_SECRET }}" \
               --restart unless-stopped \
               ghcr.io/${{ github.repository }}:latest
