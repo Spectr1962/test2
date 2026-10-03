@@ -30,7 +30,16 @@ jobs:
         run: npm ci # Чистая установка строго по package-lock.json
 
       - name: Build TypeScript
-        run: npm run build --if-present # Проверка, что TypeScript компилируется без ошибок
+        # Передаем заглушки для ВСЕХ OAuth переменных для успешного компиляции Next.js
+        env:
+          AUTH_SECRET: "temporary_secret_for_building_purposes_only"
+          AUTH_GOOGLE_ID: "temporary_google_id"
+          AUTH_GOOGLE_SECRET: "temporary_google_secret"
+          AUTH_YANDEX_ID: "temporary_yandex_id"
+          AUTH_YANDEX_SECRET: "temporary_yandex_secret"
+          AUTH_VK_ID: "temporary_vk_id"
+          AUTH_VK_SECRET: "temporary_vk_secret"
+        run: npm run build --if-present
 
   # ==========================================
   # ЭТАП 2: Сборка Docker и деплой на Рег.ру (CD)
