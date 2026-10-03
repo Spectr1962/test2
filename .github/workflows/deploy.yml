@@ -32,6 +32,7 @@ jobs:
       - name: Build TypeScript
         # Передаем заглушки для ВСЕХ OAuth переменных для успешного компиляции Next.js
         env:
+          DATABASE_URL: "postgresql://mock_user:mock_password@localhost:5432/mock_db"
           AUTH_SECRET: "temporary_secret_for_building_purposes_only"
           AUTH_GOOGLE_ID: "temporary_google_id"
           AUTH_GOOGLE_SECRET: "temporary_google_secret"
