@@ -33,7 +33,7 @@ ENV NODE_ENV=production
 COPY package*.json ./
 
 # Устанавливаем ТОЛЬКО продакшн-зависимости (без devDependencies)
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps
 
 # Копируем скомпилированный JavaScript из первого этапа сборки
 # (Если у вас в tsconfig.json указана другая папка вместо dist, замените dist на неё)
